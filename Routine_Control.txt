@@ -1,0 +1,153 @@
+siva 
+gabriel 
+Routine_Control_0x31
+
+
+Keil code:-
+
+
+
+void UDS_Routine_control(uint8_t* Uds_ServiceRequestBuffer)
+{
+	uint8_t messagelength = Uds_ServiceRequestBuffer[0];
+	uint8_t subfunction = Uds_ServiceRequestBuffer[2];
+	uint8_t R1=Uds_ServiceRequestBuffer[3];
+	uint8_t R2=Uds_ServiceRequestBuffer[4];
+	
+	if(messagelength==0x04)
+		{
+			if(subfunction==0x03)
+				{
+					if(((RID1==R1) && (RID2==R2)))
+					{
+		      Uds_ResponseBufferPtr[0]=0x04;
+		      Uds_ResponseBufferPtr[1]=UDS_SID_ROUTINE_CONTROL	+ UDS_POSITIVE_RESPONSE_MASK;
+		      Uds_ResponseBufferPtr[2]=REQUEST_FOR_RESULTS;
+	        Uds_ResponseBufferPtr[3]=RID1;
+		      Uds_ResponseBufferPtr[4]=RID2;
+		      CanTp_Tx(Uds_ResponseBufferPtr);	
+	      }  
+	      else UDS_TxNegativeResponseMessage(UDS_SID_ROUTINE_CONTROL, NRC_REQUEST_OUT_OF_RANGE);
+	      }
+			else UDS_TxNegativeResponseMessage(UDS_SID_ROUTINE_CONTROL,NRC_SUB_FUNCTION_NOT_SUPPORTED);
+	      }
+	 	else	UDS_TxNegativeResponseMessage(UDS_SID_ROUTINE_CONTROL,NRC_INVALID_FORMAT);
+}
+
+
+
+
+CAPL Code:-
+
+
+if(testService == UDS_SID_ROUTINE_CONTROL){
+        caseno++;
+        switch(caseno){
+           case 1:{
+                write("Service 31 : ROUTINE_CONTROL Validation\n");        
+                write("Test Case 1 : NRC Request out of Range Validation");
+                Service_0x31.byte(0) = 0x04;
+                Service_0x31.byte(2) = 0x03;
+                Service_0x31.byte(3) = 0x06;
+                Service_0x31.byte(4) = 0x05;
+		            output(Service_0x31);
+                break;
+            }
+            case 2:{
+                 write("Test Case 2 : NRC InvalidFormat Validation");
+                 Service_0x31.byte(0) = 0x05;
+                 Service_0x31.byte(2) = 0x03;
+                 Service_0x31.byte(3) = 0x02;
+                 Service_0x31.byte(4) = 0x03;
+                 Service_0x31.byte(5) = 0x06;
+                 output(Service_0x31);
+                 break;
+            }
+            case 3:{
+                write("Test Case 3: NRC SubfunctionNotSupported Validation");
+                Service_0x31.byte(0) = 0x04;
+                Service_0x31.byte(2) = 0x05;
+                output(Service_0x31);
+                break;
+            }
+             case 4:{
+                write("Test Case 4: Routine_Result Validation");
+                Service_0x31.byte(0) = 0x04;
+                Service_0x31.byte(2) = 0x03;
+                Service_0x31.byte(3) = RID1;
+                Service_0x31.byte(4) = RID2;
+                output(Service_0x31);
+                break;
+            }
+            default : {
+                testService = UDS_SID_DIAGNOSTIC_SESSION;
+                caseno = 0;
+		            
+            }
+        }
+    }
+
+
+
+Validation:-
+
+ if(testService == UDS_SID_ROUTINE_CONTROL){
+        switch (caseno){
+            case 1:{ 
+                if(this.byte(0) == 0x03){
+                    if(this.byte(1) == UDS_NEGATIVE_RESPONSE_ID){ 
+                        if(this.byte(2) == UDS_SID_ROUTINE_CONTROL){           
+				                if(this.byte(3) == NRC_REQUEST_OUT_OF_RANGE){
+                           write("Test Case 1 : Passed\n");
+                            passed++;
+			                      }else write("Test Case 1 : Failed\n");  	
+                        }else write("Test Case 1 : Failed\n");
+                    }else write("Test Case 1 : Failed\n");
+                }else write("Test Case 1 : Failed\n");
+                break;
+            }
+
+            case 2:{ 
+                if(this.byte(0) == 0x03){
+                      if(this.byte(1) == UDS_NEGATIVE_RESPONSE_ID){
+                        if(this.byte(2) == UDS_SID_ROUTINE_CONTROL){
+                         if(this.byte(3) == NRC_INVALID_FORMAT){
+                            write("Test Case 2 : Passed\n");
+                            passed++;
+                        }else write("Test case 2:failed\n");
+                        }else write("Test Case 2 : 1Failed\n");
+                    }else write("Test Case 2 : Failed\n");
+                }else write("Test Case 2 : Failed\n");
+                break;
+            }
+            case 3: {    
+                if(this.byte(0) == 0x03){
+                    if(this.byte(1) == UDS_NEGATIVE_RESPONSE_ID){
+                        if(this.byte(2) == UDS_SID_ROUTINE_CONTROL){
+                           if(this.byte(3) == NRC_SUB_FUNCTION_NOT_SUPPORTED){
+                            write("Test Case 3 : Passed\n");
+                            passed++;
+                            }else write("Test Case 3 : Failed\n");  
+                        }else write("Test Case 3 : Failed\n");
+                    }else write("Test Case 3 : Failed\n");
+                }else write("Test Case 3 : Failed\n");
+                break;
+            }
+             case 4: {    
+                if(this.byte(0) == 0x04){
+                    if(this.byte(1) == UDS_SID_ROUTINE_CONTROL+0x40){
+                        if(this.byte(2) == REQUEST_FOR_RESULTS){
+                           if(this.byte(3) == RID1){
+                            if(this.byte(4)== RID2){
+                            write("Test Case 4 : Passed\n");
+                            passed++;
+                            }else write("Test Case 4 : Failed\n");  
+                          }else write("Test Case 4 : Failed\n"); 
+                        }else write("Test Case 4 : Failed\n");
+                    }else write("Test Case 4 : Failed\n");
+                }else write("Test Case 4 : Failed\n");
+                break;
+            }
+            
+         }
+    }
