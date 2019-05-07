@@ -1,0 +1,193 @@
+Keil_code
+
+void UDS_Request_Upload(uint8_t* Uds_ServiceRequestBuffer)
+{
+	  static uint8_t req_downlaod=0;
+		  uint8_t messagelength = Uds_ServiceRequestBuffer[0];
+	    uint8_t cmp =0;
+	    uint8_t enyp =0;
+	    uint8_t count =0;
+	    uint8_t byte=0;
+      uint8_t address=0;
+	    uint8_t size=0;
+	
+	if((UNLOCKED)==1)
+	{
+	if(!req_downlaod)
+		{
+		if(0x00u == Uds_ServiceRequestBuffer[2])
+		{	
+		if(messagelength>0x03)
+			{
+				/* Calculate the address */
+				cmp = (Uds_ServiceRequestBuffer[3] & 0x0Fu);
+				enyp = (Uds_ServiceRequestBuffer[3] >> 0x04u);
+				
+				if(messagelength == (0x03u+cmp+enyp))
+				{
+					for(count=cmp,byte=1;count>0u;count--,byte++)
+					{
+						address |= (Uds_ServiceRequestBuffer[3+byte]<<((count-1)*8));
+						
+					}
+					/* Calculate the size */
+					for(count=enyp,byte=1;count>0u;count--,byte++)
+					{
+						size |= (Uds_ServiceRequestBuffer[3+byte+cmp]<<((count-1)*8));
+					}
+					
+					req_downlaod =0x01u;
+			  	Uds_ServiceRequestBuffer[0]=0x03;
+		      Uds_ServiceRequestBuffer[1]=UDS_SID_REQUEST_UPLOAD + UDS_POSITIVE_RESPONSE_MASK;
+			    Uds_ServiceRequestBuffer[2]=0x02;
+			    Uds_ServiceRequestBuffer[3]=0x14;
+					CanTp_Tx(Uds_ServiceRequestBuffer);
+					
+				}else  UDS_TxNegativeResponseMessage(UDS_SID_REQUEST_UPLOAD, NRC_REQUEST_OUT_OF_RANGE);
+				
+		 }else UDS_TxNegativeResponseMessage(UDS_SID_REQUEST_UPLOAD,NRC_INVALID_FORMAT);
+			
+	 }else UDS_TxNegativeResponseMessage(UDS_SID_REQUEST_UPLOAD,UPLOAD_DOWNLOAD_NOT_ACCEPTED);		
+		
+	}else UDS_TxNegativeResponseMessage(UDS_SID_REQUEST_UPLOAD, NRC_SECURITY_ACCESS_DENIED);			
+ }
+}
+
+
+Capl_Code:
+
+ if(testService == UDS_SID_REQUEST_UPLOAD){
+        caseno++;
+        switch(caseno){
+                 
+            case 1:{
+                write("Service 35 : UDS_SID_REQUEST_UPLOAD Validation\n");
+                write("Test Case 1 : NRC InvalidFormat Validation");
+                Service_0x35.byte(0) = 0x03;
+                Service_0x35.byte(2) = 0x00;
+                Service_0x35.byte(3) = 0x03;
+                Service_0x35.byte(4) = 0x00;
+                 output(Service_0x35);
+                 break;
+            }
+            case 2:{
+                write("Test Case 2: NRC Upload_Download_not_supported Validation");
+                Service_0x35.byte(0) = 0x04;
+                Service_0x35.byte(2) = 0x01;
+                output(Service_0x35);
+                break;
+            }    
+            case 3:{
+                write("Test Case 3: NRC Request_out_of_Range Validation");
+                Service_0x35.byte(0) = 0x04;
+                Service_0x35.byte(2) = 0x00;
+                Service_0x35.byte(3) = 0x03;
+                output(Service_0x35);
+                break;
+            }    
+            case 4:{  
+                write("Test Case 4 : Upload_Download Validation");
+                Service_0x35.byte(0) = 0x04;
+                Service_0x35.byte(2) = 0x00;
+                Service_0x35.byte(3) = 0x01;
+                Service_0x35.byte(4) = 0x02;
+                Service_0x35.byte(5) = 0x32;
+		            output(Service_0x35);
+                break;
+            }
+            
+            case 5:{
+                  
+                write("Test Case 5 : NRC SecurityAccessDenied Validation");
+                Service_0x35.byte(0) = 0x04;
+                Service_0x35.byte(2) = 0x00;
+                Service_0x35.byte(3) = 0x06;
+                Service_0x35.byte(4) = 0x02;
+                Service_0x35.byte(5) = 0x32;
+		            output(Service_0x35);
+                break;
+            }
+            
+             default : {
+                testService =UDS_SID_DIAGNOSTIC_SESSION;
+                caseno = 0;
+              
+                     }
+        }
+    }
+
+Validation_code:
+
+  if(testService == UDS_SID_REQUEST_UPLOAD){
+        switch (caseno){
+            case 1:{ 
+                if(this.byte(0) == 0x03){
+                    if(this.byte(1) == UDS_NEGATIVE_RESPONSE_ID){
+                        if(this.byte(2) == UDS_SID_REQUEST_UPLOAD){
+				                if(this.byte(3) == NRC_INVALID_FORMAT){ 
+                           write("Test Case 1 : Passed\n");
+                            passed++;
+			                      }else write("Test Case 1 : Failed\n");  	
+                        }else write("Test Case 1 : Failed\n");
+                    }else write("Test Case 1 : Failed\n");
+                }else write("Test Case 1 : Failed\n");
+                break;
+            }
+
+            case 2:{ 
+                if(this.byte(0) == 0x03){
+                    if(this.byte(1) == UDS_NEGATIVE_RESPONSE_ID){
+                        if(this.byte(2) == UDS_SID_REQUEST_UPLOAD){
+                         if(this.byte(3) == UPLOAD_DOWNLOAD_NOT_ACCEPTED){
+                            write("Test Case 2 : Passed\n");
+                            passed++;
+                        }else write("Test case 2:failed\n");
+                        }else write("Test Case 2 : 1Failed\n");
+                    }else write("Test Case 2 : Failed\n");
+                }else write("Test Case 2 : Failed\n");
+                break;
+            }
+            case 3: {    
+                if(this.byte(0) == 0x03){
+                    if(this.byte(1) == UDS_NEGATIVE_RESPONSE_ID){
+                        if(this.byte(2) == UDS_SID_REQUEST_UPLOAD){
+                           if(this.byte(3) == NRC_REQUEST_OUT_OF_RANGE){
+                            write("Test Case 3 : Passed\n");
+                            passed++;
+                            }else write("Test Case 3 : Failed\n");  
+                        }else write("Test Case 3 : Failed\n");
+                    }else write("Test Case 3 : Failed\n");
+                }else write("Test Case 3 : Failed\n");
+                break;
+            }
+             case 4: {    
+                if(this.byte(0) == 0x03){
+                    if(this.byte(1) == UDS_SID_REQUEST_UPLOAD+0x40){
+                        if(this.byte(2) == 0x02){
+                           if(this.byte(3) == 0x14){
+                            write("Test Case 4 : Passed\n");
+                            passed++;
+                          }else write("Test Case 4 : Failed\n"); 
+                        }else write("Test Case 4 : Failed\n");
+                    }else write("Test Case 4 : Failed\n");
+                }else write("Test Case 4 : Failed\n");
+                break;
+            }
+            
+            case 5:{ 
+                if(this.byte(0) == 0x03){
+                    if(this.byte(1) == UDS_NEGATIVE_RESPONSE_ID){
+                        if(this.byte(2) == UDS_SID_REQUEST_UPLOAD){
+				                if(this.byte(3) == NRC_SECURITY_ACCESS_DENIED){ 
+                           write("Test Case 1 : Passed\n");
+                            passed++;
+			                      }else write("Test Case 1 : Failed\n");  	
+                        }else write("Test Case 1 : Failed\n");
+                    }else write("Test Case 1 : Failed\n");
+                }else write("Test Case 1 : Failed\n");
+                break;
+            }
+            
+         }
+    }
+  
