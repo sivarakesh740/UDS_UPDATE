@@ -63,7 +63,7 @@ Capl_Code:
             case 1:{
                 write("Service 35 : UDS_SID_REQUEST_UPLOAD Validation\n");
                 write("Test Case 1 : NRC InvalidFormat Validation");
-                Service_0x35.byte(0) = 0x03;
+                Service_0x35.byte(0) = 0x02;
                 Service_0x35.byte(2) = 0x00;
                 Service_0x35.byte(3) = 0x03;
                 Service_0x35.byte(4) = 0x00;
